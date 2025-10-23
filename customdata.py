@@ -176,18 +176,26 @@ def main():
     if args.pretrained:
         print(f"==> Modifying final layer for {num_classes} classes.")
         try:
-            # For ResNet, etc.
+            # 1. Try for ResNet, etc.
             num_ftrs = model.fc.in_features
             model.fc = nn.Linear(num_ftrs, num_classes)
+
         except AttributeError:
             try:
-                # For VGG, AlexNet
+                # 2. Try for VGG, AlexNet
                 num_ftrs = model.classifier[6].in_features
                 model.classifier[6] = nn.Linear(num_ftrs, num_classes)
+
             except (AttributeError, IndexError):
-                # For DenseNet
-                num_ftrs = model.classifier.in_features
-                model.classifier = nn.Linear(num_ftrs, num_classes)
+                try:
+                    # 3. Try for EfficientNet (classifier is a Sequential)
+                    num_ftrs = model.classifier[1].in_features
+                    model.classifier[1] = nn.Linear(num_ftrs, num_classes)
+
+                except (AttributeError, IndexError):
+                    # 4. Try for DenseNet (classifier is a single Layer)
+                    num_ftrs = model.classifier.in_features
+                    model.classifier = nn.Linear(num_ftrs, num_classes)
     # --- END OF REQUIRED CHANGE ---
 
     # This single line replaces the old if/else block
