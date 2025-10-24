@@ -188,15 +188,21 @@ def main():
 
             except (AttributeError, IndexError):
                 try:
-                    # 3. Try for EfficientNet (classifier is a Sequential)
+                    # 3. Try for EfficientNet
                     num_ftrs = model.classifier[1].in_features
                     model.classifier[1] = nn.Linear(num_ftrs, num_classes)
 
                 except (AttributeError, IndexError):
-                    # 4. Try for DenseNet (classifier is a single Layer)
-                    num_ftrs = model.classifier.in_features
-                    model.classifier = nn.Linear(num_ftrs, num_classes)
-    # --- END OF REQUIRED CHANGE ---
+                    try:
+                        # 4. Try for Vision Transformer (ViT)
+                        num_ftrs = model.heads.head.in_features
+                        model.heads.head = nn.Linear(num_ftrs, num_classes)
+
+                    except (AttributeError, IndexError):
+                        # 5. Try for DenseNet
+                        num_ftrs = model.classifier.in_features
+                        model.classifier = nn.Linear(num_ftrs, num_classes)
+        # --- END OF REQUIRED CHANGE ---
 
     # This single line replaces the old if/else block
     model = torch.nn.DataParallel(model).cuda()
